@@ -1,0 +1,158 @@
+<div class="container">
+    <h1>Teachable Machine Image Model</h1>
+    <button class="start-button" type="button" onclick="init()">Start</button>
+    <div id="webcam-container"></div>
+    <div id="label-container"></div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+  <script type="text/javascript">
+    const URL = "https://teachablemachine.withgoogle.com/models/_MjECqhDR/";
+  
+    let model, webcam, labelContainer, maxPredictions;
+  
+    async function init() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+  
+      model = await tmImage.load(modelURL, metadataURL);
+      maxPredictions = model.getTotalClasses();
+  
+      const flip = true;
+      webcam = new tmImage.Webcam(300, 300, flip);
+      await webcam.setup();
+      await webcam.play();
+      window.requestAnimationFrame(loop);
+  
+      document.getElementById("webcam-container").appendChild(webcam.canvas);
+      labelContainer = document.getElementById("label-container");
+      labelContainer.innerHTML = "";
+      for (let i = 0; i < maxPredictions; i++) {
+        labelContainer.appendChild(document.createElement("div"));
+      }
+    }
+  
+    async function loop() {
+      webcam.update();
+      await predict();
+      window.requestAnimationFrame(loop);
+    }
+  
+    async function predict() {
+    const prediction = await model.predict(webcam.canvas);
+    for (let i = 0; i < maxPredictions; i++) {
+        const probability = prediction[i].probability * 100;
+        const classPrediction =
+            prediction[i].className + ": " + probability.toFixed(2) + "%";
+        const labelDiv = labelContainer.childNodes[i];
+        labelDiv.innerHTML = classPrediction;
+
+        // เปลี่ยนสีพื้นหลังตามค่าความเป็นไปได้
+        if (probability > 75) {
+            labelDiv.style.backgroundColor = "#4CAF50"; // เขียว
+            labelDiv.style.color = "#fff";
+        } else if (probability > 50) {
+            labelDiv.style.backgroundColor = "#FFC107"; // เหลือง
+            labelDiv.style.color = "#333";
+        } else {
+            labelDiv.style.backgroundColor = "#F44336"; // แดง
+            labelDiv.style.color = "#fff";
+        }
+    }
+}
+
+  </script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+  
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      min-height: 100vh;
+      background: #f7f8fa;
+      padding: 20px;
+    }
+  
+    .container {
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+    }
+  
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #333;
+    }
+  
+    .start-button {
+      font-size: 16px;
+      padding: 10px 20px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+  
+    .start-button:hover {
+      background: #0056b3;
+    }
+  
+    #webcam-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+  
+    canvas {
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+  
+    #label-container {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+  
+    #label-container div {
+      background: #fff;
+      padding: 10px;
+      margin: 5px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      width: 100%;
+      max-width: 300px;
+      text-align: left;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+  
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 20px;
+      }
+  
+      .start-button {
+        font-size: 14px;
+      }
+  
+      canvas {
+        width: 100%;
+        height: auto;
+      }
+    }
+  </style>
+  
